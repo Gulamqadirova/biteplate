@@ -27,7 +27,7 @@ class _TablesScreenState extends State<TablesScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(28),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const SectionHeader(title: 'Stollar', subtitle: 'State Pattern — Free → Reserved → Occupied → Awaiting Bill → Cleared'),
+        const SectionHeader(title: 'Floor Plan', subtitle: 'State pattern — Free → Reserved → Occupied → Awaiting Bill → Cleared'),
         GridView.builder(
           shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -42,7 +42,7 @@ class _TablesScreenState extends State<TablesScreen> {
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4)],
               ),
               child: Column(children: [
                 Container(height: 3, decoration: BoxDecoration(
@@ -55,19 +55,21 @@ class _TablesScreenState extends State<TablesScreen> {
                       const Spacer(),
                       if (_acting == num) const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
                     ]),
-                    Text('${t['capacity']} kishi', style: GoogleFonts.inter(fontSize: 11, color: AppColors.text3)),
+                    Text('${t['capacity']} seats', style: GoogleFonts.inter(fontSize: 11, color: AppColors.text3)),
                     const SizedBox(height: 8),
                     StatusBadge.forTableStatus(status),
                     const SizedBox(height: 4),
-                    Text("${t['orderCount']} ta order", style: GoogleFonts.inter(fontSize: 11, color: AppColors.text3)),
+                    Text('${t['orderCount']} orders', style: GoogleFonts.inter(fontSize: 11, color: AppColors.text3)),
                     const Spacer(),
                     Wrap(spacing: 6, runSpacing: 4, children: [
                       if (status == 'free' || status == 'cleared')
-                        _ActionBtn('Joylashtirish', AppColors.green, () => _seat(num)),
+                        _ActionBtn('Seat', AppColors.green, () => _seat(num)),
                       if (status == 'free')
-                        _ActionBtn('Bron', AppColors.orange, () => _reserve(num)),
+                        _ActionBtn('Reserve', AppColors.orange, () => _reserve(num)),
+                      if (status == 'reserved')
+                        _ActionBtn('Seat', AppColors.green, () => _seat(num)),
                       if (status == 'occupied')
-                        _ActionBtn('Tozalash', AppColors.red, () => _clear(num)),
+                        _ActionBtn('Clear', AppColors.red, () => _clear(num)),
                       if (status == 'awaitingBill')
                         _ActionBtn('Clear', AppColors.blue, () => _clear(num)),
                     ]),
@@ -86,8 +88,8 @@ class _TablesScreenState extends State<TablesScreen> {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: color.withOpacity(0.3))),
+        decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: color.withValues(alpha: 0.3))),
         child: Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: color)),
       ),
     );
@@ -97,20 +99,20 @@ class _TablesScreenState extends State<TablesScreen> {
     setState(() => _acting = n);
     final r = await context.read<AppState>().seatTable(n);
     setState(() => _acting = null);
-    if (mounted) showSnack(context, r['success'] == true ? 'Stol $n band qilindi ✓' : (r['error'] ?? 'Xatolik'), error: r['success'] != true);
+    if (mounted) showSnack(context, r['success'] == true ? 'Table $n seated ✓' : (r['error'] ?? 'Something went wrong'), error: r['success'] != true);
   }
 
   Future<void> _reserve(int n) async {
     setState(() => _acting = n);
     final r = await context.read<AppState>().reserveTable(n);
     setState(() => _acting = null);
-    if (mounted) showSnack(context, r['success'] == true ? 'Stol $n bron qilindi ✓' : (r['error'] ?? 'Xatolik'), error: r['success'] != true);
+    if (mounted) showSnack(context, r['success'] == true ? 'Table $n reserved ✓' : (r['error'] ?? 'Something went wrong'), error: r['success'] != true);
   }
 
   Future<void> _clear(int n) async {
     setState(() => _acting = n);
     final r = await context.read<AppState>().clearTable(n);
     setState(() => _acting = null);
-    if (mounted) showSnack(context, r['success'] == true ? 'Stol $n tozalandi ✓' : (r['error'] ?? 'Xatolik'), error: r['success'] != true);
+    if (mounted) showSnack(context, r['success'] == true ? 'Table $n cleared ✓' : (r['error'] ?? 'Something went wrong'), error: r['success'] != true);
   }
 }

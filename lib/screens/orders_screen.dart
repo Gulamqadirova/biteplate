@@ -34,6 +34,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
   final List<String> _cats = ['all', 'starter', 'main', 'dessert', 'beverage'];
   final List<List<String>> _staffList = [['WTR01','Bob Smith'],['WTR02','Carol Davis'],['WTR03','Mike Brown']];
 
+  String _catLabel(String c) => switch (c) {
+    'all' => 'All', 'starter' => 'Starters', 'main' => 'Mains',
+    'dessert' => 'Desserts', 'beverage' => 'Beverages', _ => c,
+  };
+
   Color _catColor(String cat) => switch (cat) {
     'starter' => AppColors.orange, 'main' => AppColors.blue,
     'dessert' => AppColors.gold, 'beverage' => AppColors.green, _ => AppColors.purple,
@@ -52,11 +57,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(28),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const SectionHeader(title: 'Orderlar', subtitle: 'Observer · Command · Decorator Pattern'),
+            const SectionHeader(title: 'Take an Order', subtitle: 'Factory · Decorator · Command · Observer patterns'),
             // Config row
             Row(children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Stol', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.text2)),
+                Text('Table', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.text2)),
                 const SizedBox(height: 5),
                 DropdownButtonFormField<String>(
                   value: _tableNum,
@@ -65,13 +70,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                     filled: true, fillColor: AppColors.surface,
                   ),
-                  items: List.generate(12, (i) => DropdownMenuItem(value: '${i+1}', child: Text('Stol ${i+1}', style: GoogleFonts.inter(fontSize: 13)))),
+                  items: List.generate(12, (i) => DropdownMenuItem(value: '${i+1}', child: Text('Table ${i+1}', style: GoogleFonts.inter(fontSize: 13)))),
                   onChanged: (v) => setState(() => _tableNum = v!),
                 ),
               ])),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Xodim', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.text2)),
+                Text('Waiter', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.text2)),
                 const SizedBox(height: 5),
                 DropdownButtonFormField<String>(
                   value: _staffId,
@@ -100,7 +105,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: active ? AppColors.sidebar : AppColors.border),
                     ),
-                    child: Text(c == 'all' ? 'Barchasi' : c[0].toUpperCase() + c.substring(1),
+                    child: Text(_catLabel(c),
                       style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: active ? Colors.white : AppColors.text2)),
                   ),
                 ),
@@ -125,15 +130,20 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(color: _catColor(item['category'] ?? '').withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
+                        decoration: BoxDecoration(color: _catColor(item['category'] ?? '').withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
                         child: Text(item['category'] ?? '', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: _catColor(item['category'] ?? ''))),
                       ),
                       const SizedBox(height: 7),
                       Text(item['name'] ?? '', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.text), maxLines: 2),
                       const Spacer(),
-                      Text('£${(item['price'] ?? 0.0).toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+                      Row(children: [
+                        Text('£${(item['price'] ?? 0.0).toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+                        const Spacer(),
+                        const Icon(Icons.add_circle_outline, size: 18, color: AppColors.text3),
+                      ]),
                       if ((item['allergens'] as List?)?.isNotEmpty == true)
-                        Text('⚠ ${(item['allergens'] as List).join(', ')}', style: GoogleFonts.inter(fontSize: 10, color: AppColors.red)),
+                        Padding(padding: const EdgeInsets.only(top: 2),
+                          child: Text('⚠ ${(item['allergens'] as List).join(', ')}', style: GoogleFonts.inter(fontSize: 10, color: AppColors.red))),
                     ]),
                   ),
                 );
@@ -149,11 +159,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
         decoration: const BoxDecoration(color: AppColors.surface, border: Border(left: BorderSide(color: AppColors.border))),
         child: Column(children: [
           Padding(padding: const EdgeInsets.all(16),
-            child: Text('🛒 Buyurtma', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700))),
+            child: Row(children: [
+              const Icon(Icons.shopping_bag_outlined, size: 18),
+              const SizedBox(width: 8),
+              Text('Current Order', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700)),
+            ])),
           const Divider(),
           Expanded(
             child: _items.isEmpty
-                ? const EmptyState(icon: '👆', message: 'Taom bosing qo\'shish uchun')
+                ? const EmptyState(icon: '🍽', message: 'Tap a dish to add it')
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: _items.length,
@@ -165,12 +179,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             Text(item.label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500)),
                             if (item.toppingName != null) Text('+ ${item.toppingName}', style: GoogleFonts.inter(fontSize: 11, color: AppColors.gold)),
-                            if (item.specialInstruction != null) Text('>> ${item.specialInstruction}', style: GoogleFonts.inter(fontSize: 11, color: AppColors.blue)),
+                            if (item.specialInstruction != null) Text('» ${item.specialInstruction}', style: GoogleFonts.inter(fontSize: 11, color: AppColors.blue)),
                           ])),
                           Text('£${item.total.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600)),
                           const SizedBox(width: 8),
                           GestureDetector(onTap: () => setState(() => _items.removeAt(i)),
-                            child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: AppColors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                            child: Container(padding: const EdgeInsets.all(4), decoration: BoxDecoration(color: AppColors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
                               child: const Icon(Icons.close, size: 14, color: AppColors.red))),
                         ]),
                       );
@@ -180,18 +194,19 @@ class _OrdersScreenState extends State<OrdersScreen> {
           const Divider(),
           Padding(padding: const EdgeInsets.all(16), child: Column(children: [
             Row(children: [
-              Text('Jami', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+              Text('Total', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
               const Spacer(),
               Text('£${rawTotal.toStringAsFixed(2)}', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
             ]),
             const SizedBox(height: 12),
             SizedBox(width: double.infinity,
-              child: BpButton(label: '🚀 Orderlarni yuborish', loading: _placing, onPressed: _items.isEmpty ? null : _placeOrder,
+              child: BpButton(label: 'Send to Kitchen', loading: _placing, onPressed: _items.isEmpty ? null : _placeOrder,
+                icon: const Icon(Icons.send_rounded, size: 15, color: Colors.white),
                 bg: AppColors.sidebar, fg: Colors.white)),
             if (_lastOrderCode != null) ...[
               const SizedBox(height: 10),
-              Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AppColors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.green.withOpacity(0.3))),
-                child: Text('✓ $_lastOrderCode kitchen navbatiga qo\'shildi', style: GoogleFonts.inter(fontSize: 12, color: AppColors.green))),
+              Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AppColors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8), border: Border.all(color: AppColors.green.withValues(alpha: 0.3))),
+                child: Text('✓ $_lastOrderCode added to kitchen queue', style: GoogleFonts.inter(fontSize: 12, color: AppColors.green))),
             ],
           ])),
         ]),
@@ -205,16 +220,16 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final instrCtrl = TextEditingController();
     showDialog(context: context, builder: (_) => AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      title: Text("Maxsus: ${item['name']}", style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700)),
+      title: Text('Customise: ${item['name']}', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700)),
       content: Column(mainAxisSize: MainAxisSize.min, children: [
-        BpTextField(label: "Qo'shimcha topping", hint: 'masalan: Limon sousi', controller: toppingCtrl),
+        BpTextField(label: 'Add-on / topping', hint: 'e.g. Extra cheese', controller: toppingCtrl),
         const SizedBox(height: 12),
-        BpTextField(label: 'Topping narxi (£)', hint: '0.00', controller: toppingCostCtrl, keyboardType: TextInputType.number),
+        BpTextField(label: 'Add-on price (£)', hint: '0.00', controller: toppingCostCtrl, keyboardType: TextInputType.number),
         const SizedBox(height: 12),
-        BpTextField(label: 'Maxsus tayyorlash', hint: 'masalan: terisiz, yaxshi pishirilgan', controller: instrCtrl),
+        BpTextField(label: 'Special preparation', hint: 'e.g. no skin, well done', controller: instrCtrl),
       ]),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Bekor')),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
         ElevatedButton(
           onPressed: () {
             final topping = toppingCtrl.text.trim();
@@ -231,7 +246,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             Navigator.pop(context);
           },
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.sidebar, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-          child: Text('+ Qo\'shish', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
+          child: Text('Add to Order', style: GoogleFonts.inter(fontWeight: FontWeight.w500)),
         ),
       ],
     ));
@@ -253,9 +268,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
     setState(() { _placing = false; });
     if (r['success'] == true) {
       setState(() { _lastOrderCode = r['order']['orderCode']; _items.clear(); });
-      if (mounted) showSnack(context, 'Order qabul qilindi ✓');
+      if (mounted) showSnack(context, 'Order placed ✓');
     } else {
-      if (mounted) showSnack(context, r['error'] ?? 'Xatolik', error: true);
+      if (mounted) showSnack(context, r['error'] ?? 'Something went wrong', error: true);
     }
   }
 }

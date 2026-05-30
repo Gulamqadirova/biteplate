@@ -28,33 +28,36 @@ class BitePlateApp extends StatelessWidget {
 
 class _NavItem {
   final String id;
-  final String icon;
+  final IconData icon;
   final String label;
   final String group;
   const _NavItem({required this.id, required this.icon, required this.label, required this.group});
 }
 
 const _navItems = [
-  _NavItem(id: 'dashboard', icon: '🏠', label: 'Dashboard', group: 'PLATFORM'),
-  _NavItem(id: 'orders', icon: '📋', label: 'Orders', group: 'PLATFORM'),
-  _NavItem(id: 'kitchen', icon: '🍳', label: 'Kitchen', group: 'PLATFORM'),
-  _NavItem(id: 'menu', icon: '📖', label: 'Menu', group: 'PLATFORM'),
-  _NavItem(id: 'tables', icon: '🪑', label: 'Tables', group: 'PLATFORM'),
-  _NavItem(id: 'billing', icon: '💳', label: 'Billing', group: 'PLATFORM'),
-  _NavItem(id: 'history', icon: '📊', label: 'Reports', group: 'MANAGEMENT'),
-  _NavItem(id: 'staff', icon: '👥', label: 'Staff', group: 'MANAGEMENT'),
-  _NavItem(id: 'notifications', icon: '🔔', label: 'Bildirishnomalar', group: 'MANAGEMENT'),
+  _NavItem(id: 'dashboard', icon: Icons.grid_view_rounded, label: 'Dashboard', group: 'OPERATIONS'),
+  _NavItem(id: 'orders', icon: Icons.receipt_long_rounded, label: 'Orders', group: 'OPERATIONS'),
+  _NavItem(id: 'kitchen', icon: Icons.restaurant_rounded, label: 'Kitchen Queue', group: 'OPERATIONS'),
+  _NavItem(id: 'menu', icon: Icons.menu_book_rounded, label: 'Menu', group: 'OPERATIONS'),
+  _NavItem(id: 'tables', icon: Icons.table_restaurant_rounded, label: 'Tables', group: 'OPERATIONS'),
+  _NavItem(id: 'billing', icon: Icons.point_of_sale_rounded, label: 'Billing & POS', group: 'OPERATIONS'),
+  _NavItem(id: 'history', icon: Icons.insights_rounded, label: 'Reports', group: 'MANAGEMENT'),
+  _NavItem(id: 'staff', icon: Icons.badge_rounded, label: 'Staff', group: 'MANAGEMENT'),
+  _NavItem(id: 'notifications', icon: Icons.notifications_rounded, label: 'Notifications', group: 'MANAGEMENT'),
 ];
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
-  @override State<MainShell> createState() => _MainShellState();
+  @override
+  State<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends State<MainShell> {
   String _page = 'dashboard';
   Timer? _refreshTimer;
   String _clock = '';
+
+  void navigateTo(String page) => setState(() => _page = page);
 
   @override
   void initState() {
@@ -72,22 +75,33 @@ class _MainShellState extends State<MainShell> {
   }
 
   void _updateClock() {
+    if (!mounted) return;
     final now = TimeOfDay.now();
-    setState(() => _clock = '${now.hour.toString().padLeft(2,'0')}:${now.minute.toString().padLeft(2,'0')}');
+    setState(() => _clock =
+    '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}');
     Future.delayed(const Duration(seconds: 30), _updateClock);
   }
 
   @override
   void dispose() { _refreshTimer?.cancel(); super.dispose(); }
 
-  String get _pageTitle => switch (_page) {
-    'dashboard' => 'Dashboard', 'orders' => 'Orderlar', 'kitchen' => 'Kitchen',
-    'menu' => 'Menyu', 'tables' => 'Stollar', 'billing' => "Hisob va To'lov",
-    'history' => 'Hisobotlar', 'staff' => 'Xodimlar', 'notifications' => 'Bildirishnomalar', _ => '',
+  String get _pageTitle => _navItems.firstWhere((n) => n.id == _page).label;
+
+  String get _pageSubtitle => switch (_page) {
+    'dashboard' => 'Live overview of today\'s service',
+    'orders' => 'Take orders and send them to the kitchen',
+    'kitchen' => 'Command-based queue with undo support',
+    'menu' => 'Dishes, combos and customisation',
+    'tables' => 'Floor plan and table lifecycle',
+    'billing' => 'Itemised bills, discounts, tips and splits',
+    'history' => 'Order history, revenue and analytics',
+    'staff' => 'Roles and permissions',
+    'notifications' => 'Real-time activity feed',
+    _ => '',
   };
 
   Widget get _currentScreen => switch (_page) {
-    'dashboard' => const DashboardScreen(),
+    'dashboard' => DashboardScreen(onNavigate: navigateTo),
     'orders' => const OrdersScreen(),
     'kitchen' => const KitchenScreen(),
     'menu' => const MenuScreen(),
@@ -96,91 +110,186 @@ class _MainShellState extends State<MainShell> {
     'history' => const HistoryScreen(),
     'staff' => const StaffScreen(),
     'notifications' => const NotificationsScreen(),
-    _ => const DashboardScreen(),
+    _ => DashboardScreen(onNavigate: navigateTo),
   };
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final queueCount = state.kitchenQueue['pendingCount'] as int? ?? 0;
+    final notifCount = state.notifications.length;
 
     return Scaffold(
+      backgroundColor: AppColors.bg,
       body: Row(children: [
-        // Sidebar
+        // ── Sidebar ──
         Container(
-          width: 220,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(colors: [Color(0xFF1A1A2E), Color(0xFF16213E)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-          ),
+          width: 240,
+          color: AppColors.sidebar,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            // Logo
-            Padding(padding: const EdgeInsets.fromLTRB(20, 24, 20, 16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Container(width: 36, height: 36, decoration: BoxDecoration(color: AppColors.accent, borderRadius: BorderRadius.circular(10)),
-                child: Center(child: Text('B', style: GoogleFonts.playfairDisplay(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)))),
-              const SizedBox(height: 12),
-              Text('BitePlate', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-              Text('Restaurant SRMS', style: GoogleFonts.inter(fontSize: 11, color: AppColors.sidebarText)),
-            ])),
-            Container(height: 1, color: Colors.white.withOpacity(0.08)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
+              child: Row(children: [
+                Container(
+                  width: 38, height: 38,
+                  decoration: BoxDecoration(color: AppColors.accent, borderRadius: BorderRadius.circular(10)),
+                  child: Center(child: Text('B', style: GoogleFonts.spaceGrotesk(
+                      fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.accentText))),
+                ),
+                const SizedBox(width: 11),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('BitePlate', style: GoogleFonts.spaceGrotesk(
+                      fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.text)),
+                  Text('Restaurant SRMS', style: GoogleFonts.spaceGrotesk(fontSize: 10, color: AppColors.text3)),
+                ]),
+              ]),
+            ),
+            Container(height: 1, color: AppColors.border),
             const SizedBox(height: 8),
-            Expanded(child: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              for (final group in ['PLATFORM', 'MANAGEMENT']) ...[
-                Padding(padding: const EdgeInsets.fromLTRB(20, 12, 20, 6),
-                  child: Text(group, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.8, color: Colors.white.withOpacity(0.35)))),
-                ..._navItems.where((n) => n.group == group).map((n) {
-                  final active = _page == n.id;
-                  final badge = n.id == 'kitchen' && queueCount > 0 ? queueCount : 0;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 1),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () => setState(() => _page = n.id),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-                        decoration: BoxDecoration(
-                          color: active ? Colors.white.withOpacity(0.15) : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
+            Expanded(child: SingleChildScrollView(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                for (final group in ['OPERATIONS', 'MANAGEMENT']) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 14, 18, 6),
+                    child: Text(group, style: GoogleFonts.spaceGrotesk(
+                        fontSize: 10, fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2, color: AppColors.text3)),
+                  ),
+                  ..._navItems.where((n) => n.group == group).map((n) {
+                    final active = _page == n.id;
+                    final badge = n.id == 'kitchen' ? queueCount
+                        : (n.id == 'notifications' ? notifCount : 0);
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: () => setState(() => _page = n.id),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: active ? AppColors.accentDim : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                                color: active ? AppColors.accent.withValues(alpha: 0.3) : Colors.transparent),
+                          ),
+                          child: Row(children: [
+                            Icon(n.icon, size: 17,
+                                color: active ? AppColors.accent : AppColors.sidebarText),
+                            const SizedBox(width: 11),
+                            Expanded(child: Text(n.label, style: GoogleFonts.spaceGrotesk(
+                                fontSize: 13,
+                                fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                                color: active ? AppColors.accent : AppColors.sidebarText))),
+                            if (badge > 0)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                    color: AppColors.accent, borderRadius: BorderRadius.circular(10)),
+                                child: Text('$badge', style: GoogleFonts.spaceGrotesk(
+                                    fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.accentText)),
+                              ),
+                          ]),
                         ),
-                        child: Row(children: [
-                          Text(n.icon, style: const TextStyle(fontSize: 15)),
-                          const SizedBox(width: 10),
-                          Expanded(child: Text(n.label, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: active ? Colors.white : AppColors.sidebarText))),
-                          if (badge > 0)
-                            Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(color: AppColors.accent, borderRadius: BorderRadius.circular(10)),
-                              child: Text('$badge', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white))),
-                        ]),
                       ),
-                    ),
-                  );
-                }),
-              ],
-            ]))),
+                    );
+                  }),
+                ],
+              ]),
+            )),
+            Container(height: 1, color: AppColors.border),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(children: [
+                Container(
+                  width: 34, height: 34,
+                  decoration: BoxDecoration(
+                      color: AppColors.accentDim,
+                      borderRadius: BorderRadius.circular(9),
+                      border: Border.all(color: AppColors.accent.withValues(alpha: 0.3))),
+                  child: Center(child: Text('Mk', style: GoogleFonts.spaceGrotesk(
+                      fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.accent))),
+                ),
+                const SizedBox(width: 10),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Mikasa', style: GoogleFonts.spaceGrotesk(
+                      fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.text)),
+                  Text('Manager', style: GoogleFonts.spaceGrotesk(fontSize: 11, color: AppColors.text3)),
+                ])),
+                Icon(Icons.more_vert, size: 15, color: AppColors.text3),
+              ]),
+            ),
           ]),
         ),
 
-        // Main area
+        // ── Main ──
         Expanded(child: Column(children: [
-          // Topbar
-            Container(
-            height: 60,
-            padding: const EdgeInsets.symmetric(horizontal: 28),
+          Container(
+            height: 58,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             decoration: const BoxDecoration(
               color: AppColors.surface,
               border: Border(bottom: BorderSide(color: AppColors.border)),
             ),
-            ),
-          // Content
-          Expanded(child: _currentScreen),
+            child: Row(children: [
+              Column(mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(_pageTitle, style: GoogleFonts.spaceGrotesk(
+                        fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.text)),
+                    Text(_pageSubtitle, style: GoogleFonts.spaceGrotesk(
+                        fontSize: 11, color: AppColors.text3)),
+                  ]),
+              const Spacer(),
+              _pill(Icons.schedule_rounded, _clock),
+              const SizedBox(width: 8),
+              _pill(Icons.calendar_today_rounded, _formatDate()),
+              const SizedBox(width: 12),
+              Stack(clipBehavior: Clip.none, children: [
+                GestureDetector(
+                  onTap: () => setState(() => _page = 'notifications'),
+                  child: Container(
+                    width: 36, height: 36,
+                    decoration: BoxDecoration(
+                        color: AppColors.surface2,
+                        borderRadius: BorderRadius.circular(9),
+                        border: Border.all(color: AppColors.border)),
+                    child: const Icon(Icons.notifications_none_rounded, size: 17, color: AppColors.text2),
+                  ),
+                ),
+                if (notifCount > 0)
+                  Positioned(right: -2, top: -2,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
+                        constraints: const BoxConstraints(minWidth: 15, minHeight: 15),
+                        child: Center(child: Text('$notifCount', style: GoogleFonts.spaceGrotesk(
+                            fontSize: 9, fontWeight: FontWeight.w700, color: AppColors.accentText))),
+                      )),
+              ]),
+            ]),
+          ),
+          Expanded(child: Container(color: AppColors.bg, child: _currentScreen)),
         ])),
       ]),
     );
   }
 
+  Widget _pill(IconData icon, String text) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+    decoration: BoxDecoration(
+        color: AppColors.surface2,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.border)),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 12, color: AppColors.text3),
+      const SizedBox(width: 6),
+      Text(text, style: GoogleFonts.spaceGrotesk(
+          fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.text2)),
+    ]),
+  );
+
   String _formatDate() {
     final now = DateTime.now();
-    const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    return '${days[now.weekday - 1]}, ${now.day} ${months[now.month - 1]} ${now.year}';
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return '${now.day} ${months[now.month - 1]} ${now.year}';
   }
 }
