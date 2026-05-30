@@ -1,16 +1,5 @@
-/// Staff domain — INHERITANCE + ABSTRACTION + role-based access control.
-///
-/// [Staff] is an abstract base that captures identity and the permission-check
-/// contract. Each concrete role (Manager, Waiter, Chef, Cashier) declares the
-/// set of [Permission]s it grants. Permission checks go through [require],
-/// which throws a [DomainException] the API maps to HTTP 403 — adding a new
-/// role never touches existing call sites.
-library;
-
 import 'errors.dart';
 
-/// Granular capabilities, decoupled from roles so new roles compose existing
-/// permissions (see Task 4 — Scenario E).
 enum Permission {
   takeOrder,
   modifyKitchenQueue,
@@ -40,15 +29,9 @@ abstract class Staff {
       throw DomainException('Staff id and name are required.');
     }
   }
-
   String get role;
-
-  /// The permissions this role grants — the only thing subclasses must define.
   Set<Permission> get permissions;
-
   bool can(Permission permission) => permissions.contains(permission);
-
-  /// Guard used by services before privileged actions.
   void require(Permission permission) {
     if (!can(permission)) {
       throw DomainException('$role "$name" is not permitted to '
@@ -56,7 +39,6 @@ abstract class Staff {
     }
   }
 
-  /// Two-letter monogram for avatars.
   String get initials {
     final parts = name.trim().split(RegExp(r'\s+'));
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();

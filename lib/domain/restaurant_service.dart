@@ -1,14 +1,3 @@
-/// Application service — the single orchestration seam between the HTTP layer
-/// and the pattern-rich domain. It owns the in-memory restaurant state, seeds
-/// demo data, wires the observers, and exposes plain `Map`/`List` views that the
-/// API serialises to JSON.
-///
-/// This is where the three headline patterns cooperate in one coherent flow:
-///   place order  → Decorator builds the line items, a PrepareOrderCommand is
-///   enqueued (Command), and the audit OrderRecord is appended to the singleton
-///   log — with Observers fired throughout.
-library;
-
 import 'billing.dart';
 import 'errors.dart';
 import 'history.dart';
@@ -257,7 +246,6 @@ class RestaurantService {
 
   // ─────────────────────────── Commands ────────────────────────────────────
 
-  /// STATE pattern — table transitions are validated by the table itself.
   Map<String, dynamic> seatTable(int number) {
     _table(number).seat();
     _subject.notify(OrderEvent('table', 'Table $number seated'));
@@ -276,9 +264,6 @@ class RestaurantService {
     return {'success': true};
   }
 
-  /// The coherent multi-pattern flow: Factory + Decorator build the line items,
-  /// the order is recorded in the Singleton log, a Command is enqueued, and
-  /// Observers are notified (including an allergy alert when relevant).
   Map<String, dynamic> placeOrder(Map<String, dynamic> body) {
     final tableNumber = _asInt(body['tableNumber'], 'tableNumber');
     final staffId = _asString(body['staffId'], 'staffId');
@@ -304,7 +289,6 @@ class RestaurantService {
       }
       final quantity = raw['quantity'] == null ? 1 : _asInt(raw['quantity'], 'quantity');
 
-      // DECORATOR — wrap the base dish with any runtime extras.
       MenuComponent component = _menu[index];
       final toppingName = raw['toppingName'];
       if (toppingName is String && toppingName.trim().isNotEmpty) {
@@ -341,10 +325,7 @@ class RestaurantService {
       timestamp: order.placedAt,
     ));
 
-    // COMMAND — queue the prepare action for the kitchen.
     _kitchen.enqueue(PrepareOrderCommand(order, _subject));
-
-    // OBSERVER — broadcast, and raise an allergy alert if any dish is flagged.
     _subject.notify(OrderEvent('order',
         '${order.code} placed at Table $tableNumber by ${staff.name}'));
     if (order.allergens.isNotEmpty) {
@@ -379,7 +360,6 @@ class RestaurantService {
 
     final bill = _billing.generate(order, strategy, tipPercent: tipPercent);
 
-    // Advance the lifecycle and reconcile the audit record.
     if (order.status != OrderStatus.billed) {
       order.forceStatus(OrderStatus.billed);
     }

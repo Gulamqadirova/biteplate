@@ -1,18 +1,8 @@
-/// Kitchen action queue — COMMAND pattern.
-///
-/// Each kitchen action (prepare, cancel, expedite) is reified as a [KitchenCommand]
-/// with `execute()` and `undo()`. [KitchenQueue] is the invoker: it holds a
-/// FIFO of pending commands and a history stack so the last executed action can
-/// be undone. The [Order] acts as the receiver. The waiter (caller) never knows
-/// which concrete command it triggered.
-library;
-
 import 'errors.dart';
 import 'orders.dart';
 import 'observers.dart';
 
 abstract class KitchenCommand {
-  /// Tag the UI colour-codes: prepare | cancel | expedite.
   String get type;
   String get description;
 
@@ -20,7 +10,6 @@ abstract class KitchenCommand {
   void undo();
 }
 
-/// Advances an order into preparation; undo rolls it back to confirmed.
 class PrepareOrderCommand implements KitchenCommand {
   final Order order;
   final OrderSubject subject;
@@ -49,7 +38,6 @@ class PrepareOrderCommand implements KitchenCommand {
   }
 }
 
-/// Cancels an order before service; undo restores the prior status.
 class CancelOrderCommand implements KitchenCommand {
   final Order order;
   final OrderSubject subject;
@@ -78,7 +66,6 @@ class CancelOrderCommand implements KitchenCommand {
   }
 }
 
-/// Pushes an order straight to ready (priority); undo rolls it back.
 class ExpediteOrderCommand implements KitchenCommand {
   final Order order;
   final OrderSubject subject;
@@ -107,7 +94,6 @@ class ExpediteOrderCommand implements KitchenCommand {
   }
 }
 
-/// INVOKER — owns the pending FIFO and an executed-history stack for undo.
 class KitchenQueue {
   final List<KitchenCommand> _pending = [];
   final List<KitchenCommand> _history = [];
@@ -117,7 +103,6 @@ class KitchenQueue {
   List<KitchenCommand> get pending => List.unmodifiable(_pending);
   List<KitchenCommand> get history => List.unmodifiable(_history);
 
-  /// Executes the next pending command and records it for undo.
   KitchenCommand processNext() {
     if (_pending.isEmpty) {
       throw DomainException('The kitchen queue is empty.');
@@ -128,7 +113,6 @@ class KitchenQueue {
     return command;
   }
 
-  /// Undoes the most recently executed command and returns it to the queue.
   KitchenCommand undoLast() {
     if (_history.isEmpty) {
       throw DomainException('There is no kitchen action to undo.');

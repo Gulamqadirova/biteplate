@@ -73,7 +73,6 @@ class _MainShellState extends State<MainShell> {
       state.loadNotifications();
     });
   }
-
   void _updateClock() {
     if (!mounted) return;
     final now = TimeOfDay.now();
@@ -81,7 +80,6 @@ class _MainShellState extends State<MainShell> {
     '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}');
     Future.delayed(const Duration(seconds: 30), _updateClock);
   }
-
   @override
   void dispose() { _refreshTimer?.cancel(); super.dispose(); }
 

@@ -1,17 +1,7 @@
-/// Billing & POS — FACADE pattern over the Strategy pricing engine, tax,
-/// tips and split-bill maths.
-///
-/// Callers invoke a single [BillingFacade.generate] call; the facade hides the
-/// orchestration of discount calculation, tax, tipping and receipt assembly.
-/// A [Bill] is composed of [BillLineItem]s that cannot exist on their own
-/// (composition).
-library;
-
 import 'errors.dart';
 import 'orders.dart';
 import 'pricing.dart';
 
-/// A single receipt line — owned wholly by its [Bill].
 class BillLineItem {
   final String itemName;
   final int quantity;
@@ -46,12 +36,7 @@ class Bill {
 }
 
 class BillingFacade {
-  /// UK VAT on hospitality, expressed once so it is never hard-coded at call
-  /// sites.
   static const double taxRate = 0.10;
-
-  /// Builds an itemised bill. Tax is charged on the post-discount subtotal;
-  /// tip is charged on top of the taxed amount.
   Bill generate(
     Order order,
     PricingStrategy strategy, {
@@ -87,9 +72,6 @@ class BillingFacade {
     );
   }
 
-  /// Splits a grand total between guests, rounding to the penny and pushing any
-  /// rounding remainder onto the first guest so the shares always re-sum to the
-  /// exact total.
   List<double> split(double grandTotal, int guests) {
     if (guests < 1) {
       throw DomainException('Guest count must be at least 1.');

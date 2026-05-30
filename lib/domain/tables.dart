@@ -1,18 +1,8 @@
-/// Table lifecycle — STATE pattern.
-///
-/// Each lifecycle stage (Free → Reserved → Occupied → Awaiting Bill → Cleared)
-/// is its own [TableState] object that knows which transitions are legal.
-/// [RestaurantTable] delegates to its current state, so the table itself holds
-/// no `if (status == ...)` branching and illegal transitions raise a
-/// [DomainException] instead of silently corrupting state.
-library;
-
 import 'errors.dart';
 
 abstract class TableState {
   const TableState();
 
-  /// Stable tag shared with the UI/state colours.
   String get tag;
 
   TableState seat(RestaurantTable table) =>
@@ -63,7 +53,6 @@ class AwaitingBillState extends TableState {
   TableState clear(RestaurantTable table) => const ClearedState();
 }
 
-/// Terminal state of a dining session. Seating again starts a fresh cycle.
 class ClearedState extends TableState {
   const ClearedState();
   @override
